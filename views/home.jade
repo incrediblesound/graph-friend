@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  div.container
+    div.row
+      h1 Welcome #{user.data.name}
+      - each other in others
+        - if(other.othr.id !== user.id)
+          p= other.othr.data.name
