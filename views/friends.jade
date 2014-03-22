@@ -6,4 +6,5 @@ block content
       div.col-md-6
         h1 Welcome #{user.data.name}
         - each friend in friends
-          p= friend.friends.data.name
+          p.lead #{friend.friends.data.name}
+          span #{friend.friends.data.name}s job: #{friend.friends.data.job}

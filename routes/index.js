@@ -10,41 +10,48 @@ exports.index = function(req, res){
 };
 
 exports.register = function(req, res) {
-	var user = db.createNode({name: req.body.name, password: req.body.password})
+	var user = db.createNode({
+    name: req.body.name, 
+    password: req.body.password,
+    job: req.body.job
+  });
   user.save(function (err, node) {
-		if(err) {
-			console.log(err);
+    if (err) {
+      console.log(err);
+    } else {
+    db.query('START n=node(*)\nWHERE n.job = "'+req.body.job+'"\nRETURN n', function (err, sameJob) {
+    if(err) {
+      console.log(err);
       res.redirect('/')
-		} else { 
-			console.log(node)
-      req.session.user = node
+    } else { 
+      req.session.user = node;
+      req.session.userId = node.id;
       res.render('home', {
-        user: user
+        user: user,
+        others: sameJob
       });
-		};
+    };
+    })
+  }
 	})
 };
 
 exports.login = function(req, res) {
-  var params = {
-    name: req.body.name,
-    password: req.body.password
-  };
   var query = [
-  'START usr=node(*)',
-  'WHERE usr.name = "'+params.name+'"',
-  'AND usr.password = "'+params.password+'"',
-  'RETURN usr'
+  'START n=node(*)',
+  'WHERE n.name = "'+req.body.name+'"',
+  'AND n.password = "'+req.body.password+'"',
+  'RETURN n'
   ].join('\n');
-
-  db.query(query, params, function (err, user) {
+  db.query(query, function (err, user) {
     if(err) {
       console.log(err);
       res.redirect('/');
     } else {
-    req.session.user = user[0].usr;
-    req.session.userId = user[0].usr.id;
-    db.query('START othr=node(*)\nRETURN othr', params, function ( err, others) {
+    console.log(user);
+    req.session.user = user[0].n;
+    req.session.userId = user[0].n.id;
+    db.query('START n=node(*)\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -52,7 +59,7 @@ exports.login = function(req, res) {
       console.log(req.session.user.id);
         res.render('home', {
           user: req.session.user,
-          others: others
+          others: sameJob
         })
       }
     })
@@ -61,18 +68,16 @@ exports.login = function(req, res) {
 };
 
 exports.main = function(req, res) {
-  var params = {};
   db.getNodeById(req.session.userId, function (err, user) {
-    req.session.user = user
-    db.query('START othr=node(*)\nRETURN othr', params, function ( err, others) {
+    req.session.user = user;
+    db.query('START n=node(*)\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
     } else {
-        console.log(others)
         res.render('home', {
           user: req.session.user,
-          others: others
+          others: sameJob,
         })
       }
     })
@@ -81,13 +86,13 @@ exports.main = function(req, res) {
 
 exports.friend = function(req, res) {
   console.log('Session data: ' + req.session.userId);
-  db.getNodeById(req.session.userId, function ( err, user) {
+  db.getNodeById(req.session.userId, function (err, user) {
     if(err) {
       console.log('find user:' + err);
     } else {
       console.log(user);
     db.getNodeById(req.params.id, function (err, other) {
-      user.createRelationshipTo(other, 'friend', function(err, rel) {
+      user.createRelationshipTo(other, 'occupation', function(err, rel) {
         if(err) {
           console.log(err);
         } else {
@@ -100,13 +105,12 @@ exports.friend = function(req, res) {
 };
 
 exports.myfriends = function(req, res) {
-  var params = {};
   db.getNodeById(req.session.userId, function(err, user) {
-    db.query('START u=node('+req.session.userId+')\nMATCH u-[:friend]-(friends)\nRETURN friends',params, function (err, frnds) {
+    db.query('START u=node('+req.session.userId+')\nMATCH u-[:occupation]-(friends)\nRETURN friends', function (err, frnds) {
       if(err) {
         console.log(err);
       } else {
-        console.log(frnds);
+        console.log(frnds[0].friends)
       res.render('friends', {
         user: user,
         friends: frnds
