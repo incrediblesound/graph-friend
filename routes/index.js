@@ -100,12 +100,18 @@ exports.friend = function(req, res) {
 };
 
 exports.myfriends = function(req, res) {
+  var params = {};
   db.getNodeById(req.session.userId, function(err, user) {
-    user.getRelationships('friend', function (err, rels) {
+    db.query('START u=node('+req.session.userId+')\nMATCH u-[:friend]-(friends)\nRETURN friends',params, function (err, frnds) {
+      if(err) {
+        console.log(err);
+      } else {
+        console.log(frnds);
       res.render('friends', {
         user: user,
-        rels: rels
+        friends: frnds
       })
+    }
     })
   })
 }
