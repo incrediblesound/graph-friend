@@ -1,0 +1,9 @@
+extends layout
+
+block content
+  div.container
+    div.row
+      div.col-md-6
+        h1 Welcome #{user.data.name}
+        - each rel in rels
+          p= rel.end

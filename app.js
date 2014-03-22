@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(express.bodyParser());
 app.use(express.cookieParser('graph'));
 app.use(express.session({
-	key: app.sesion
+	key: app.session
 }));
 app.use(express.urlencoded());
 app.use(express.methodOverride());
@@ -36,7 +36,8 @@ if ('development' == app.get('env')) {
 app.get('/', routes.index);
 app.post('/register', routes.register);
 app.get('/home', routes.main);
-app.post('/friend', routes.friend);
+app.get('/friend/:id', routes.friend);
+app.get('/myfriends', routes.myfriends)
 app.post('/login', routes.login);
 
 

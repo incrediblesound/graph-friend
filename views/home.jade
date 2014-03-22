@@ -3,7 +3,10 @@ extends layout
 block content
   div.container
     div.row
-      h1 Welcome #{user.data.name}
-      - each other in others
-        - if(other.othr.id !== user.id)
-          p= other.othr.data.name
+      div.col-md-6
+        h1 Welcome #{user.data.name}
+        - each other in others
+          - if(other.othr.id !== user.id)
+            a(href='/friend/#{other.othr.id}')= other.othr.data.name
+      div.col-md-6
+        a(href='/myfriends') View Friends
