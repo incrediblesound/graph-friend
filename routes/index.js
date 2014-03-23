@@ -110,12 +110,14 @@ exports.myfriends = function(req, res) {
       if(err) {
         console.log(err);
       } else {
-        console.log(frnds[0].friends)
-      res.render('friends', {
-        user: user,
-        friends: frnds
-      })
-    }
+        db.query('START u=node('+req.session.userId+')\nMATCH u-[:occupation]-(link)-[]-(distant)\nRETURN link, distant', function (err, distant) {
+          res.render('friends', {
+            user: user,
+            friends: frnds,
+            distant: distant
+          })
+        })
+      }
     })
   })
-}
+};

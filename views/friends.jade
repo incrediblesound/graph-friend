@@ -5,6 +5,12 @@ block content
     div.row
       div.col-md-6
         h1 Welcome #{user.data.name}
+        h2 Your friends:
         - each friend in friends
           p.lead #{friend.friends.data.name}
           span #{friend.friends.data.name}s job: #{friend.friends.data.job}
+        h2 Your friends' friends:
+        - each person in distant
+          p.lead #{person.distant.data.name}
+          p Linked through: #{person.link.data.name}
+          p #{person.distant.data.name}s job: #{person.distant.data.job}
