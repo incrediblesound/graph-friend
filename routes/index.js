@@ -19,7 +19,7 @@ exports.register = function(req, res) {
     if (err) {
       console.log(err);
     } else {
-    db.query('START n=node(*)\nWHERE n.job = "'+req.body.job+'"\nRETURN n', function (err, sameJob) {
+    db.query('MATCH n\nWHERE n.job = "'+req.body.job+'"\nRETURN n', function (err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/')
@@ -38,7 +38,7 @@ exports.register = function(req, res) {
 
 exports.login = function(req, res) {
   var query = [
-  'START n=node(*)',
+  'MATCH n',
   'WHERE n.name = "'+req.body.name+'"',
   'AND n.password = "'+req.body.password+'"',
   'RETURN n'
@@ -51,7 +51,7 @@ exports.login = function(req, res) {
     console.log(user);
     req.session.user = user[0].n;
     req.session.userId = user[0].n.id;
-    db.query('START n=node(*)\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
+    db.query('MATCH n\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -70,7 +70,7 @@ exports.login = function(req, res) {
 exports.main = function(req, res) {
   db.getNodeById(req.session.userId, function (err, user) {
     req.session.user = user;
-    db.query('START n=node(*)\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
+    db.query('MATCH n\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
