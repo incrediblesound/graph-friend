@@ -39,6 +39,7 @@ app.get('/home', routes.main);
 app.get('/friend/:id', routes.friend);
 app.get('/myfriends', routes.myfriends)
 app.post('/login', routes.login);
+app.get('/login', routes.login);
 
 
 http.createServer(app).listen(app.get('port'), function(){

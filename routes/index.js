@@ -10,37 +10,30 @@ exports.index = function(req, res){
 };
 
 exports.register = function(req, res) {
-	var user = db.createNode({
-    name: req.body.name, 
-    password: req.body.password,
-    job: req.body.job
-  });
-  user.save(function (err, node) {
-    if (err) {
-      console.log(err);
-    } else {
-    db.query('MATCH n\nWHERE n.job = "'+req.body.job+'"\nRETURN n', function (err, sameJob) {
-    if(err) {
-      console.log(err);
-      res.redirect('/')
-    } else { 
-      req.session.user = node;
-      req.session.userId = node.id;
-      res.render('home', {
-        user: user,
-        others: sameJob
-      });
-    };
-    })
+  if(req.body.status === 'Lord') {
+    var query = 'CREATE (n: Lord {name: "'+req.body.name+'", password: "'+req.body.password+'", job: "'+req.body.job+'"})'
+  } else {
+    var query = 'CREATE (n: Minion {name: "'+req.body.name+'", password: "'+req.body.password+'", job: "'+req.body.job+'"})'
   }
+  db.query(query, function (err) {
+    req.session.data = {name: req.body.name, password: req.body.password};
+    res.redirect('/login');
 	})
 };
 
 exports.login = function(req, res) {
+  if(req.body.name && req.body.password) {
+    var loginData = {name: req.body.name, password: req.body.password};
+  } 
+  else if (req.session.data) {
+    var loginData = req.session.data;
+  } else {
+    res.redirect('/');
+  }
   var query = [
   'MATCH n',
-  'WHERE n.name = "'+req.body.name+'"',
-  'AND n.password = "'+req.body.password+'"',
+  'WHERE n.name = "'+loginData.name+'"',
+  'AND n.password = "'+loginData.password+'"',
   'RETURN n'
   ].join('\n');
   db.query(query, function (err, user) {
@@ -48,7 +41,6 @@ exports.login = function(req, res) {
       console.log(err);
       res.redirect('/');
     } else {
-    console.log(user);
     req.session.user = user[0].n;
     req.session.userId = user[0].n.id;
     db.query('MATCH n\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
@@ -56,7 +48,6 @@ exports.login = function(req, res) {
       console.log(err);
       res.redirect('/');
     } else {
-      console.log(req.session.user.id);
         res.render('home', {
           user: req.session.user,
           others: sameJob
