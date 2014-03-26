@@ -10,8 +10,14 @@ exports.index = function(req, res){
 };
 
 exports.register = function(req, res) { 
-  db.query('CREATE (n: '+req.body.status+' {name: "'+req.body.name+'", password: "'+req.body.password+'", job: "'+req.body.job+'"})', function (err) {
-    req.session.data = {name: req.body.name, password: req.body.password};
+  req.session.data = {name: req.body.name, password: req.body.password};
+  var params = {
+    status: req.body.status, 
+    name: req.body.name, 
+    password: req.body.password, 
+    job: req.body.job
+  };
+  db.query('CREATE (n: ({status}) {name: ({name}), password: ({password}), job: ({job})})',params, function (err) {
     res.redirect('/login');
 	})
 };
@@ -25,12 +31,12 @@ exports.login = function(req, res) {
 
   var query = [
   'MATCH n',
-  'WHERE n.name = "'+loginData.name+'"',
-  'AND n.password = "'+loginData.password+'"',
+  'WHERE n.name = ({name})',
+  'AND n.password = ({password})',
   'RETURN n, labels(n)'
   ].join('\n');
 
-  db.query(query, function (err, user) {
+  db.query(query,loginData, function (err, user) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -39,11 +45,11 @@ exports.login = function(req, res) {
     req.session.labels = user[0]['labels(n)'][0];
     req.session.userId = user[0].n.id;
     if(req.session.labels === 'Minion') {
-        var complement = 'Lord';
+      var params = {job: req.session.user.data.job, complement: 'Lord'};
       } else {
-        var complement = 'Minion';
-      }
-    db.query('MATCH (n:'+complement+')\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
+      var params = {job: req.session.user.data.job, complement: 'Minion'};
+      };
+    db.query('MATCH (n:'+params.complement+')\nWHERE n.job = ({job})\nRETURN n',params, function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -52,7 +58,7 @@ exports.login = function(req, res) {
         res.render('home', {
           user: req.session.user,
           others: sameJob,
-          otherstatus: complement
+          otherstatus: params.complement
         })
       }
     })
@@ -63,7 +69,8 @@ exports.login = function(req, res) {
 exports.main = function(req, res) {
   db.getNodeById(req.session.userId, function (err, user) {
     req.session.user = user;
-    db.query('MATCH n\nWHERE n.job = "'+req.session.user.data.job+'"\nRETURN n', function ( err, sameJob) {
+    var params = {job: user.data.job};
+    db.query('MATCH n\nWHERE n.job = ({job})\nRETURN n',params, function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -78,7 +85,6 @@ exports.main = function(req, res) {
 };
 
 exports.friend = function(req, res) {
-  console.log('Session data: ' + req.session.userId);
   db.getNodeById(req.session.userId, function (err, user) {
     if(err) {
       console.log('find user:' + err);
@@ -98,12 +104,13 @@ exports.friend = function(req, res) {
 };
 
 exports.myfriends = function(req, res) {
-  db.getNodeById(req.session.userId, function(err, user) {
-    db.query('START u=node('+req.session.userId+')\nMATCH u-[:occupation]-(friends)\nRETURN friends', function (err, frnds) {
+  var params = {id: req.session.userId};
+  db.getNodeById(params.id, function(err, user) {
+    db.query('START u=node({id})\nMATCH u-[:occupation]-(friends)\nRETURN friends',params, function (err, frnds) {
       if(err) {
         console.log(err);
       } else {
-        db.query('START u=node('+req.session.userId+')\nMATCH u-[:occupation]-(link)-[]-(distant)\nRETURN link, distant', function (err, distant) {
+        db.query('START u=node({id})\nMATCH u-[:occupation]-(link)-[]-(distant)\nRETURN link, distant',params, function (err, distant) {
           res.render('friends', {
             user: user,
             friends: frnds,
