@@ -12,12 +12,11 @@ exports.index = function(req, res){
 exports.register = function(req, res) { 
   req.session.data = {name: req.body.name, password: req.body.password};
   var params = {
-    status: req.body.status, 
     name: req.body.name, 
     password: req.body.password, 
     job: req.body.job
   };
-  db.query('CREATE (n: ({status}) {name: ({name}), password: ({password}), job: ({job})})',params, function (err) {
+  db.query('CREATE (n:'+req.body.status+' {name: ({name}), password: ({password}), job: ({job})})',params, function (err) {
     res.redirect('/login');
 	})
 };
