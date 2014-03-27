@@ -68,8 +68,12 @@ exports.login = function(req, res) {
 exports.main = function(req, res) {
   db.getNodeById(req.session.userId, function (err, user) {
     req.session.user = user;
-    var params = {job: user.data.job};
-    db.query('MATCH n\nWHERE n.job = ({job})\nRETURN n',params, function ( err, sameJob) {
+    if(req.session.labels === 'Minion') {
+      var params = {job: req.session.user.data.job, complement: 'Lord'};
+      } else {
+      var params = {job: req.session.user.data.job, complement: 'Minion'};
+      };
+    db.query('MATCH (n:'+params.complement+')\nWHERE n.job = ({job})\nRETURN n',params, function ( err, sameJob) {
     if(err) {
       console.log(err);
       res.redirect('/');
@@ -77,6 +81,7 @@ exports.main = function(req, res) {
         res.render('home', {
           user: req.session.user,
           others: sameJob,
+          otherstatus: params.complement
         })
       }
     })
@@ -84,15 +89,24 @@ exports.main = function(req, res) {
 };
 
 exports.friend = function(req, res) {
-  db.getNodeById(req.session.userId, function (err, user) {
+  db.getNodeById(req.session.userId, function (err, user) { //get the user node
     if(err) {
       console.log('find user:' + err);
     } else {
-      console.log(user);
-    db.getNodeById(req.params.id, function (err, other) {
-      user.createRelationshipTo(other, 'occupation', function(err, rel) {
-        if(err) {
-          console.log(err);
+    db.getNodeById(req.params.id, function (err, other) { //get the (potential) friend node
+      var params = {id: req.session.userId, other: other.id};
+      db.query('START u=node({id}), o=node({other})\nMATCH (u)-[l:occupation]-(o)\n RETURN l', 
+      params, function (err, link) { //check for existing relationship
+        console.log('link error: '+err);
+        console.log(link.length);
+        if(link.length === 0) {
+          user.createRelationshipTo(other, 'occupation', function(err, rel) {
+            if(err) {
+              console.log(err);
+            } else {
+              res.redirect('/home')
+            }
+          })
         } else {
           res.redirect('/home')
         }
